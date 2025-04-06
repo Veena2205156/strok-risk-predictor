@@ -2,14 +2,10 @@ import streamlit as st
 import numpy as np
 import joblib
 
-# 🌈 Custom CSS Styling for background and elements
+# 🌈 Custom CSS Styling
 st.markdown(
     """
     <style>
-    body {
-        background-color: #f0f8ff;
-    }
-
     .stApp {
         background-image: linear-gradient(to right, #e0f7fa, #f0f8ff);
         background-size: cover;
@@ -33,20 +29,6 @@ st.markdown(
     .stButton > button:hover {
         background-color: #e60000;
         transform: scale(1.05);
-    }
-
-    .stNumberInput input {
-        background-color: #ffffff;
-        border-radius: 5px;
-    }
-
-    .stSelectbox div {
-        background-color: #ffffff;
-        border-radius: 5px;
-    }
-
-    .stAlert {
-        background-color: #e0ffe0;
     }
     </style>
     """,
@@ -72,58 +54,4 @@ work_type = st.selectbox("Work Type", ["Private", "Self-employed", "Govt_job", "
 residence_type = st.selectbox("Residence Type", ["Urban", "Rural"])
 avg_glucose_level = st.number_input("Average Glucose Level", min_value=50.0, max_value=300.0, value=100.0)
 bmi = st.number_input("BMI", min_value=10.0, max_value=60.0, value=24.0)
-smoking_status = st.selectbox("Smoking Status", ["formerly smoked", "never smoked", "smokes", "Unknown"])
-
-# 🔮 Predict Button
-if st.button("Predict Stroke Risk"):
-    # Prepare input data
-    input_dict = {
-        'age': age,
-        'hypertension': 1 if hypertension == "Yes" else 0,
-        'heart_disease': 1 if heart_disease == "Yes" else 0,
-        'avg_glucose_level': avg_glucose_level,
-        'bmi': bmi,
-    }
-
-    # One-hot encode categorical features
-    cat_features = {
-        f"gender_{gender}": 1,
-        f"ever_married_{ever_married}": 1,
-        f"work_type_{work_type}": 1,
-        f"Residence_type_{residence_type}": 1,
-        f"smoking_status_{smoking_status}": 1
-    }
-
-    # Combine all features
-    full_input = {col: 0 for col in columns}
-    full_input.update(input_dict)
-    for key in cat_features:
-        if key in full_input:
-            full_input[key] = 1
-
-    input_array = np.array([list(full_input.values())])
-    input_scaled = scaler.transform(input_array)
-
-    # Predict probability
-    prob = model.predict_proba(input_scaled)[0][1]
-
-    # Classify result
-    def classify_risk(prob):
-        if prob < 0.34:
-            return "🟢 Low Risk"
-        elif prob < 0.67:
-            return "🟡 Moderate Risk"
-        else:
-            return "🔴 High Risk"
-
-    risk = classify_risk(prob)
-
-    # 🧾 Show Result
-    st.subheader(f"Prediction: {risk}")
-    st.caption(f"(Probability: {prob:.2f})")
-
-    # 🎯 Custom Recommendations
-    if prob < 0.34:
-        st.success("🟢 You are at low risk. Keep up a healthy lifestyle!")
-        st.markdown("""
-        ### 🩺 Personalized Health
+smoking_status = st.selectbox("Smoking Status", ["formerly smoked",_
