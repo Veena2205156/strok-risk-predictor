@@ -2,40 +2,81 @@ import streamlit as st
 import numpy as np
 import joblib
 
-# Load model, scaler, and column names
+# 🌈 Custom CSS Styling for background and elements
+st.markdown(
+    """
+    <style>
+    body {
+        background-color: #f0f8ff;
+    }
+
+    .stApp {
+        background-image: linear-gradient(to right, #e0f7fa, #f0f8ff);
+        background-size: cover;
+        padding: 2rem;
+    }
+
+    h1, h3, h4, h2 {
+        color: #004d40;
+    }
+
+    .stButton > button {
+        background-color: #ff4d4d;
+        color: white;
+        border-radius: 10px;
+        padding: 0.5rem 1.5rem;
+        border: none;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+
+    .stButton > button:hover {
+        background-color: #e60000;
+        transform: scale(1.05);
+    }
+
+    .stNumberInput input {
+        background-color: #ffffff;
+        border-radius: 5px;
+    }
+
+    .stSelectbox div {
+        background-color: #ffffff;
+        border-radius: 5px;
+    }
+
+    .stAlert {
+        background-color: #e0ffe0;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# 📦 Load model and preprocessing tools
 model = joblib.load("stroke_model.pkl")
 scaler = joblib.load("scaler.pkl")
 columns = joblib.load("columns.pkl")
 
-# Title
-st.markdown("""
-    <h1 style='text-align: center; color: teal;'>🧠 Stroke Risk Predictor</h1>
-    <h4 style='text-align: center; color: gray;'>Your personalized health companion</h4>
-    <hr>
-""", unsafe_allow_html=True)
+# 🧠 Title
+st.title("🧠 Stroke Risk Predictor")
+st.write("Enter the following health details to check your stroke risk level:")
 
-# Layout with columns
-col1, col2 = st.columns(2)
-
-with col1:
-    gender = st.selectbox("Gender", ["Male", "Female", "Other"])
-    age = st.slider("Age", 1, 100, 30)
-    hypertension = st.selectbox("Hypertension?", ["No", "Yes"])
-    heart_disease = st.selectbox("Heart Disease?", ["No", "Yes"])
-
-with col2:
-    ever_married = st.selectbox("Ever Married?", ["No", "Yes"])
-    work_type = st.selectbox("Work Type", ["Private", "Self-employed", "Govt_job", "children", "Never_worked"])
-    residence_type = st.selectbox("Residence Type", ["Urban", "Rural"])
-    smoking_status = st.selectbox("Smoking Status", ["formerly smoked", "never smoked", "smokes", "Unknown"])
-
-# Glucose & BMI
+# 📋 Input fields
+gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+age = st.slider("Age", 1, 100, 30)
+hypertension = st.selectbox("Do you have hypertension?", ["No", "Yes"])
+heart_disease = st.selectbox("Do you have heart disease?", ["No", "Yes"])
+ever_married = st.selectbox("Have you ever been married?", ["No", "Yes"])
+work_type = st.selectbox("Work Type", ["Private", "Self-employed", "Govt_job", "children", "Never_worked"])
+residence_type = st.selectbox("Residence Type", ["Urban", "Rural"])
 avg_glucose_level = st.number_input("Average Glucose Level", min_value=50.0, max_value=300.0, value=100.0)
 bmi = st.number_input("BMI", min_value=10.0, max_value=60.0, value=24.0)
+smoking_status = st.selectbox("Smoking Status", ["formerly smoked", "never smoked", "smokes", "Unknown"])
 
-# Submit
-if st.button("🔍 Predict Stroke Risk"):
-    # Prepare input
+# 🔮 Predict Button
+if st.button("Predict Stroke Risk"):
+    # Prepare input data
     input_dict = {
         'age': age,
         'hypertension': 1 if hypertension == "Yes" else 0,
@@ -44,7 +85,7 @@ if st.button("🔍 Predict Stroke Risk"):
         'bmi': bmi,
     }
 
-    # One-hot encode
+    # One-hot encode categorical features
     cat_features = {
         f"gender_{gender}": 1,
         f"ever_married_{ever_married}": 1,
@@ -53,7 +94,7 @@ if st.button("🔍 Predict Stroke Risk"):
         f"smoking_status_{smoking_status}": 1
     }
 
-    # Combine with 0s first
+    # Combine all features
     full_input = {col: 0 for col in columns}
     full_input.update(input_dict)
     for key in cat_features:
@@ -63,46 +104,26 @@ if st.button("🔍 Predict Stroke Risk"):
     input_array = np.array([list(full_input.values())])
     input_scaled = scaler.transform(input_array)
 
-    # Predict
+    # Predict probability
     prob = model.predict_proba(input_scaled)[0][1]
 
-    # Classification
+    # Classify result
+    def classify_risk(prob):
+        if prob < 0.34:
+            return "🟢 Low Risk"
+        elif prob < 0.67:
+            return "🟡 Moderate Risk"
+        else:
+            return "🔴 High Risk"
+
+    risk = classify_risk(prob)
+
+    # 🧾 Show Result
+    st.subheader(f"Prediction: {risk}")
+    st.caption(f"(Probability: {prob:.2f})")
+
+    # 🎯 Custom Recommendations
     if prob < 0.34:
-        risk = "🟢 Low Risk"
         st.success("🟢 You are at low risk. Keep up a healthy lifestyle!")
-    elif prob < 0.67:
-        risk = "🟡 Moderate Risk"
-        st.warning("🟡 You are at moderate risk. Consider lifestyle changes.")
-    else:
-        risk = "🔴 High Risk"
-        st.error("🔴 You are at high risk. Consult a doctor immediately.")
-
-    # Output
-    st.markdown(f"""
-        <h3>Prediction: {risk}</h3>
-        <p style='color: gray;'>(Probability: {prob:.2f})</p>
-    """, unsafe_allow_html=True)
-
-    st.progress(int(prob * 100))
-
-    # Recommendations
-    st.markdown("""---""")
-    st.markdown("### 💡 Personalized Health Recommendations")
-    if prob < 0.34:
         st.markdown("""
-        - 😁 Maintain your current lifestyle  
-        - ✅ Regular check-ups  
-        - 💪 Stay active  
-        """)
-    elif prob < 0.67:
-        st.markdown("""
-        - 🥗 Improve your diet (less sugar & salt)  
-        - 🚶 Increase daily activity  
-        - 🩺 Visit a physician for advice  
-        """)
-    else:
-        st.markdown("""
-        - 🩺 Book a health consultation immediately  
-        - 🚫 Avoid smoking and alcohol  
-        - 🧘 Practice stress management  
-        """)
+        ### 🩺 Personalized Health
